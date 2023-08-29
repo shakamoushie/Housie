@@ -1,0 +1,15 @@
+streamlit==1.25.0
+streamlit.components.v1
+base64
+json
+os
+time
+datetime
+random
+Pillow==9.5.0
+shutil
+streamlit-autorefresh
+winsound
+
+
+
