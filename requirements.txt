@@ -1,5 +1,4 @@
 streamlit==1.25.0
-streamlit.components.v1
 Pillow==9.5.0
 streamlit-autorefresh
 
