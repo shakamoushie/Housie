@@ -10,6 +10,3 @@ Pillow==9.5.0
 shutil
 streamlit-autorefresh
 winsound
-
-
-
