@@ -9,7 +9,7 @@ import random
 from PIL import Image
 import shutil
 from streamlit_autorefresh import st_autorefresh
-import winsound
+# import winsound
 # from streamlit_lottie import st_lottie
 
 st.set_page_config(page_title = "Housie", page_icon="🔢", layout = "wide", initial_sidebar_state = "expanded")
@@ -408,7 +408,8 @@ def CreateNewTicket():
                         if fc != st.session_state.disp_player_no:
                             st.session_state.disp_player_no = fc
                             if st.session_state.GameDetails[6] == True:
-                                winsound.Beep(beep_frequency, beep_duration)
+                                # winsound.Beep(beep_frequency, beep_duration)
+                                pass
 
         if len(st.session_state.board_gen_no_lst) > 0:
             st.markdown(last_gen_no_colour.replace('|fill_variable|', str(st.session_state.disp_player_no).zfill(2)), True)
@@ -489,7 +490,8 @@ def NewGeneratedNumber():
             f.write(', '.join(str(x).zfill(2) for x in st.session_state.board_gen_no_lst))
 
     if st.session_state.GameDetails[6] == True:
-        winsound.Beep(beep_frequency, beep_duration)
+        # winsound.Beep(beep_frequency, beep_duration)
+        pass
 
 def UpdtWinStatus():
     winstr = ''
