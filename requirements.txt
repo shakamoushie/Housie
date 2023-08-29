@@ -1,5 +1,4 @@
 streamlit==1.25.0
-streamlit.components.v1
 base64
 json
 os
