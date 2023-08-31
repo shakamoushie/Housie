@@ -8,7 +8,7 @@ import random
 from PIL import Image
 import shutil
 from streamlit_autorefresh import st_autorefresh
-from notifypy import Notify     # pip install notify-py
+from notifypy import Notify
 import pandas as pd
 
 st.set_page_config(page_title = "Housie", page_icon="🔢", layout = "wide", initial_sidebar_state = "expanded")
