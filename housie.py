@@ -3,14 +3,13 @@ import streamlit.components.v1 as components
 import base64
 import os
 import time as tm
-from datetime import datetime as dt, timedelta
-import json
+from datetime import datetime as dt
 import random
 from PIL import Image
 import shutil
 from streamlit_autorefresh import st_autorefresh
-# import winsound
-# from streamlit_lottie import st_lottie
+from notifypy import Notify     # pip install notify-py
+import pandas as pd
 
 st.set_page_config(page_title = "Housie", page_icon="🔢", layout = "wide", initial_sidebar_state = "expanded")
 
@@ -28,6 +27,7 @@ purple_btn_colour = """
                         </style>
                     """
 horizontal_bar = "<hr style='margin-top: 0; margin-bottom: 0; height: 1px; border: 1px solid #635985;'><br>"    # thin divider line
+horizontal_dashed_bar = "<hr style='margin-top: 0; margin-bottom: 0; height: 1px; border: 1px dashed #635985;'><br>"    # thin divider line
 
 if "board_gen_no_lst" not in st.session_state:
     st.session_state.board_gen_no_lst = []
@@ -35,16 +35,15 @@ if "board_gen_no_lst" not in st.session_state:
 if "WinStatus" not in st.session_state:
     st.session_state.WinStatus = [''] * 5  # 0: Jaldi5, Line1, Line2, Line3, Fullhouse
 
-if "GameDetails" not in st.session_state:   # Game No, Player Name, Game Path, auto/manual num gen, sec interval for autogen, auto/man = true/false, playsound 
-    st.session_state.GameDetails = ['XP17', 'Shawn', '', 'auto', 6, True, False]
+# 0: Game No, 1: Player Name, 2: Game Path, 3: auto/manual num gen, 4: sec interval for autogen, 5: auto/man = true/false, 6: playsound 
+if "GameDetails" not in st.session_state:   
+    st.session_state.GameDetails = ['XP17', 'Shawn', '', 'auto', 6, False, True]
 
 if "disp_player_no" not in st.session_state:
     st.session_state.disp_player_no = 0
 
-beep_frequency = 650
-beep_duration = 45
-
-#note: # Comment highlight options: INFO, FIXME, NOTE, WARN + colon
+if "mydf" not in st.session_state:
+    st.session_state.mydf = pd.DataFrame()
 
 normal_no_colour = """<span style='background-color: #E0E0E0;
                                        color: #000000;
@@ -80,7 +79,7 @@ last_gen_no_colour = """<span style='background-color: #76d7c4;
                                      border-radius: 7px;
                                      text-align: center;
                                      display:inline;
-                                     margin-left: 100px;
+                                     margin-left: 107px;
                                      padding-top: 3px;
                                      padding-bottom: 3px;
                                      padding-left: 0.4em;
@@ -103,6 +102,10 @@ win_txt = """<span style='background-color: #90CAF9;
                                      '>
                                      |fill_variable|
                                      </span>"""
+
+notification = Notify()
+notification.title = "Housie Number"
+# notification.icon = vpth + "Speak.png"
 
 def ReduceGapFromPageTop():
     st.markdown(" <style> div[class^='block-container'] { padding-top: 3rem; } </style> ", unsafe_allow_html=True)  # reduce gap from page top
@@ -148,7 +151,7 @@ def GenUniqRndmNo():
 
 def GameAborted():
     ReduceGapFromPageTop()
-    st.subheader(f"👾 Game: :red[{st.session_state.GameDetails[0]}]:")
+    st.subheader(f"👾 Game Ref. No. (GRN): :blue[{st.session_state.GameDetails[0]}]:")
     st.markdown(horizontal_bar, True)
     st.markdown(purple_btn_colour, unsafe_allow_html=True)
 
@@ -184,7 +187,7 @@ def GameAborted():
 
 def GameOver():
     ReduceGapFromPageTop()
-    st.subheader(f"👾 Game: :red[{st.session_state.GameDetails[0]}]:")
+    st.subheader(f"👾 Game Ref. No. (GRN): :blue[{st.session_state.GameDetails[0]}]:")
     st.markdown(horizontal_bar, True)
 
     ptxt = """<span style='color: #000000;
@@ -374,13 +377,13 @@ def FullHouse():
 
 def CreateNewTicket():
     ReduceGapFromPageTop()
-    st.subheader(f"Game: :red[{st.session_state.GameDetails[0]}] | Player: :red[{st.session_state.GameDetails[1]}] | Ticket:")
+    st.subheader(f"Game Ref. No. (GRN): :blue[{st.session_state.GameDetails[0]}] Ticket | Player: :blue[{st.session_state.GameDetails[1]}]:")
+    st.markdown(horizontal_bar, True)
 
     tmp_player_nos = list(st.session_state.player_nos.keys())
 
-    sc1, sc2, sc3 = st.columns((5,4,3))
-
-    with sc3.container():
+    sc1, sc2, sc3, sc4 = st.columns((4,3,1,3))
+    with sc4.container():
         st.markdown(f"<img src='data:png;base64,{ReadPictureFile('TicketImg.png')}'>", unsafe_allow_html=True)
 
     with sc1.container():
@@ -399,17 +402,25 @@ def CreateNewTicket():
     with sc2.container():
         aftimer = st_autorefresh(interval=2000, key="aftmr")
         if aftimer > 0:
-            if os.path.isfile(vpth + "HG26082023121607217203/" + 'previous_board_number.txt'):   # HG26082023121607217203 = st.session_state.GameDetails[2]
-                mdttm = os.path.getmtime(vpth + "HG26082023121607217203/" + 'previous_board_number.txt')
+            if os.path.isfile(st.session_state.GameDetails[2] + 'previous_board_number.txt'):
+                mdttm = os.path.getmtime(st.session_state.GameDetails[2] + 'previous_board_number.txt')
                 mdttm = dt.fromtimestamp(mdttm)
                 if mdttm > st.session_state.lst_tkt_no_read_dttm or fc == 0:
-                    with open(vpth + "HG26082023121607217203/" + 'previous_board_number.txt', 'r') as f:   # write gen no into txt file
+                    with open(st.session_state.GameDetails[2] + 'previous_board_number.txt', 'r') as f:   # write gen no into txt file
                         fc = int(f.read())
                         if fc != st.session_state.disp_player_no:
                             st.session_state.disp_player_no = fc
                             if st.session_state.GameDetails[6] == True:
-                                # winsound.Beep(beep_frequency, beep_duration)
-                                pass
+                                try:
+                                    vndesc = st.session_state.mydf['Description'].where(st.session_state.mydf['No'] == fc).dropna().tolist()[0]
+                                    
+                                    notification.message = vndesc
+                                    notification.audio = vpth + f"{fc}.wav"
+                                    notification.icon = vpth + random.choice(["Speak1.png", "Speak2.png", "Speak3.png", "Speak4.png", "Speak5.png"])
+                                    notification.send()
+                                
+                                except:
+                                    pass
 
         if len(st.session_state.board_gen_no_lst) > 0:
             st.markdown(last_gen_no_colour.replace('|fill_variable|', str(st.session_state.disp_player_no).zfill(2)), True)
@@ -433,7 +444,13 @@ def CreateNewTicket():
         fhdsbld = True if st.session_state.WinStatus[4]  != '' else False    # if file exists, someone has won FullHouse
         sc25.button('🏚️', help="Full House", disabled=fhdsbld, on_click=FullHouse)
 
-    st.markdown(horizontal_bar, True)
+        if sc26.button('🔙', help="Terminate Play and Return"):
+            st.session_state.runpage = Main
+            st.experimental_rerun()
+
+    if len(st.session_state.board_gen_no_lst) >= 1:
+        st.markdown(horizontal_dashed_bar, True)
+
     if st.session_state.WinStatus[0] == '' and os.path.isfile(st.session_state.GameDetails[2] + 'jaldi5.txt'):  # F5 won by some other player
         with open(st.session_state.GameDetails[2] + 'jaldi5.txt', 'r') as f:   # write gen no into txt file
             st.session_state.WinStatus[0] = f.read().strip()
@@ -473,6 +490,7 @@ def CreateNewTicket():
             st.session_state.board_gen_no_lst = tlst
             st.session_state.board_gen_no_lst = [int(x) for x in tlst]
     
+    st.markdown(horizontal_bar, True)
     ResetPlayerBtnColour()
     
 def PlayPause():
@@ -488,10 +506,6 @@ def NewGeneratedNumber():
     if len(st.session_state.board_gen_no_lst) > 0:
         with open(st.session_state.GameDetails[2] + 'board_number_list.txt', 'w') as f:   # write gen no into txt file
             f.write(', '.join(str(x).zfill(2) for x in st.session_state.board_gen_no_lst))
-
-    if st.session_state.GameDetails[6] == True:
-        # winsound.Beep(beep_frequency, beep_duration)
-        pass
 
 def UpdtWinStatus():
     winstr = ''
@@ -551,17 +565,11 @@ def DeleteTmpFiles():
 
 def CreateNewBoard():
     ReduceGapFromPageTop()
-
-    if "auto_mode_pause_play_btn_toggle" not in st.session_state:
-        st.session_state.auto_mode_pause_play_btn_toggle = 'play'
-
-    st.subheader(f"Game: :red[{st.session_state.GameDetails[0]}]:")
-
+    st.subheader(f"Game Ref. No. (GRN): :blue[{st.session_state.GameDetails[0]}]:")
 
     sc1, sc2 = st.columns((2,1))
     with sc2.container():
         st.markdown(f"<img src='data:png;base64,{ReadPictureFile('MainBoard.png')}'>", unsafe_allow_html=True)
-
 
     with sc1.container():
         bn_ptr = 0
@@ -617,8 +625,6 @@ def CreateNewBoard():
                     NewGeneratedNumber()
             
     if c2.button("🔙", help="Return to Main Menu"):
-        del st.session_state.auto_mode_pause_play_btn_toggle
-
         if len(st.session_state.board_gen_no_lst) < 92:
             with open(st.session_state.GameDetails[2] + 'abortgame.txt', 'w') as f:   # write gen no into txt file
                 f.write('Board aborted during mid-play')
@@ -637,9 +643,9 @@ def GameSettings():
     w1hlp = "Set the main board number generation to manual/auto"
     w2hlp = "Seconds interval between each main board number generation when in auto mode"
     w3hlp = "Play a beep for each new number generated on the board and ticket."
-    vbr = c1.radio("Board Run", ("", "manual", "auto"), horizontal=True, help=w1hlp)
+    vbr = c1.radio("Board Run", ("", "manual", "auto"), index=2, horizontal=True, help=w1hlp)
     vam_dsble = True if vbr == "manual" else False
-    vam = c2.number_input("Seconds", min_value=1.00, max_value=10.00, step=0.25, disabled=vam_dsble, help=w2hlp)
+    vam = c2.number_input("Seconds", min_value=1.00, max_value=10.00, value=6.50, step=0.25, disabled=vam_dsble, help=w2hlp)
     btn_dsbld = True if vbr == "" else False
     vsnd = st.radio("Sounds for new number generation", ('No', 'Yes'), horizontal=True, help=w3hlp)
     st.markdown(horizontal_bar, True)
@@ -661,6 +667,32 @@ def GameSettings():
         st.session_state.runpage = Main
         st.experimental_rerun()
 
+def NewTicketCallback(gm_ref, plyr_nme):
+    st.session_state.GameDetails[0] = gm_ref
+    st.session_state.GameDetails[1] = plyr_nme
+    st.session_state.GameDetails[2] = vpth + gm_ref + '/'  # Game Path
+
+    if "lst_tkt_no_read_dttm" not in st.session_state:
+        st.session_state.lst_tkt_no_read_dttm = dt.now()
+
+    if "player_nos" not in st.session_state:
+        st.session_state.player_nos = {}
+
+    tmp_player_nos = GeneratePlayerNos()
+    for vkey in tmp_player_nos:
+        st.session_state.player_nos[vkey] = False
+
+    st.session_state.disp_player_no = 0
+    st.session_state.WinStatus = [''] * 5
+
+    st.session_state.mydf = load_csv()
+
+@st.cache_data
+def load_csv():
+    st.session_state.mydf = pd.read_csv(vpth + 'NumberDescription.csv')
+    st.session_state.mydf['No'] = st.session_state.mydf['No'].astype(int)
+    return st.session_state.mydf
+
 def Main():
     st.markdown('<style>[data-testid="stSidebar"] > div:first-child {width: 290px;}</style>', unsafe_allow_html=True,)
 
@@ -675,11 +707,16 @@ def Main():
         st.markdown(ticket_icon, unsafe_allow_html=True)
 
         st.markdown(horizontal_bar, True)
-        game_rules = st.button("📚 Playing Instructions")
-        game_settings = st.button("🛠️ Game Settings")
-        new_game = st.button("🎲 New Game Board")
+        sc01, sc02 = st.columns(2)
+        game_rules = sc01.button("📚 Rules &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;")
+        game_settings = sc02.button("🛠️ Settings &nbsp;&nbsp;&nbsp;")
+        new_game = st.button("🎲 New Game Board &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;")
         new_tkt = False
-        st.write("🎟️ New Game Ticket")
+        sc1, sc2 = st.columns((3,1))
+        sc1.markdown("", True)
+        sc1.markdown("🎟️ New Game Ticket", True)
+        if sc2.button("🔄", help="Refresh Games List / GRNs"):
+            st.experimental_rerun()
 
         # new ticket for an existing game
         with st.expander("Player Options", True):
@@ -688,22 +725,24 @@ def Main():
 
             if len(gm_fldr_lst) > 0:
                 gm_fldr_lst.insert(0, '')
-                gm_ref = st.selectbox("👇 Choose Game: :red[*]", gm_fldr_lst, index=0, help="Choose a game for which a ticket needs to be created")
+                gm_ref = st.selectbox("👇 Choose Game Ref. No. (GRN): :red[*]", gm_fldr_lst, index=0, help="Choose a game for which a ticket needs to be created")
                 plyr_nme = st.text_input("👨🏻‍💼 Player Name: :red[*]")
                 ntdsbld = True if gm_ref == '' or plyr_nme == '' else False
-                new_tkt = st.button("⚙️ Generate Game Ticket", disabled=ntdsbld)
+                new_tkt = st.button("⚙️ Generate Game Ticket", on_click=NewTicketCallback, args=(gm_ref, plyr_nme), disabled=ntdsbld)
+                if new_tkt:
+                    st.session_state.runpage = CreateNewTicket
+                    st.experimental_rerun()
 
         if game_settings == True:
             st.session_state.runpage = GameSettings
             st.experimental_rerun()
 
         elif game_rules == True:
-            st.session_state.runpage = ViewHelpManual
+            st.session_state.runpage = ViewHelp
             st.experimental_rerun()
 
         elif new_game == True:
-            # gm_fldr_nme = f"HG{dt.now():%d%m%Y%H%M%S%f}"  # Game project folder
-            gm_fldr_nme = "HG26082023121607217203"  # Game project folder   warn: TBD
+            gm_fldr_nme = f"HG{dt.now():%d%m%Y%H%M%S%f}"  # Game project folder
 
             subdircreated = CreateSubDir(gm_fldr_nme)
             if not subdircreated:
@@ -721,44 +760,120 @@ def Main():
 
                 DeleteTmpFiles()
 
+                st.session_state.WinStatus = [''] * 5
+                st.session_state.GameDetails[5] = False
+
                 st.session_state.runpage = CreateNewBoard
                 st.experimental_rerun()
         
             else:
                 st.error("😲 Couldnt create game folder. Unknown Error.")
 
-        elif new_tkt == True:
-            st.session_state.GameDetails[0] = gm_ref
-            st.session_state.GameDetails[1] = plyr_nme
-            st.session_state.GameDetails[2] = vpth + gm_ref + '/'  # Game Path
+    st.sidebar.markdown(horizontal_bar, True)    
+    author_dtl = "<strong>😎 Shawn Pereira: Happy Playing:<br>shawnpereira1969@gmail.com</strong>"
+    st.sidebar.markdown(author_dtl, unsafe_allow_html=True)
 
-            if "lst_tkt_no_read_dttm" not in st.session_state:
-                st.session_state.lst_tkt_no_read_dttm = dt.now()
+def HelpHeader(hdr_txt, icon_dtl):
+    vhdr = f'''<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+                         {icon_dtl}&nbsp;&nbsp;
+                         <span style="font-size: 28px; font-weight: bold;">{hdr_txt}:</span>'''
+    return vhdr
 
-            if "player_nos" not in st.session_state:
-                st.session_state.player_nos = {}
-
-            tmp_player_nos = GeneratePlayerNos()
-            for vkey in tmp_player_nos:
-                st.session_state.player_nos[vkey] = False
-            st.session_state.runpage = CreateNewTicket
-            st.experimental_rerun()
-
-def ViewHelpManual():
-    st.markdown(purple_btn_colour, unsafe_allow_html=True) 
+def ViewHelp():
     ReduceGapFromPageTop()
-    st.subheader("Game Help:")
+    st.markdown(purple_btn_colour, unsafe_allow_html=True) 
+    st.sidebar.header("🤔 Game Help:")
 
-    try:
-        with open("GameHelp.pdf","rb") as pdf_file:
-            base64_pdf = base64.b64encode(pdf_file.read()).decode('utf-8')
-            pdf_display = f'<embed src="data:application/pdf;base64,{base64_pdf}" width="1000" height="500" type="application/pdf">' 
-            st.markdown(pdf_display, unsafe_allow_html=True)
+    hlp_dtl = [''] * 6
+    hlp_dtl[1] = """<span style="font-size: 20px;">
+    <strong>New Game Board:<br></strong>
+    <ol>
+    <li style="font-size:18px";>Admin to open browser tab.</li>
+    <li style="font-size:18px";>Load game.</li>
+    <li style="font-size:18px";>Choose New Game Board.</li>
+    <li style="font-size:18px";>Inform players about Game Reference Number (GRN).</li>
+    <li style="font-size:18px";>Click on Play/Pause to start (play) game board number generation.</li>
+    </ol></span>""" + """<span style="font-size: 20px;">
+    <strong>New Player Ticket:<br></strong>
+    <ol>
+    <li style="font-size:18px";>Each player to open separate browser tab, only after the Game Board has been created and alive.</li>
+    <li style="font-size:18px";>Load game.</li>
+    <li style="font-size:18px";>Choose Game Reference Number (GRN).</li>
+    <li style="font-size:18px";>Enter player name.</li>
+    <li style="font-size:18px";>Create Game Ticket.</li>
+    <li style="font-size:18px";>Refresh window (🔄) if GRN and Player name options are not seen.</li>
+    </ol></span>
+    """ + """<span style="font-size: 20px;"><strong>Note: </strong>For any given game, the Tickets are to be created only after the Game Board has been created.</span><br><br>"""
 
-    except:
-        st.sidebar.error("✋ Error opening GameHelp.pdf")
+    hlp_dtl[2] = """<span style="font-size: 20px;">
+    You can use this section to do the following:<br><ul>
+    <li style="font-size:18px";>Set the numbers to be randomly generated on the board, to be automatic or manual. <i>Default: Automatic</i>.</li>
+    <li style="font-size:18px";>For automatic, you will need to specify the time interval (seconds) between the generation of two numbers. <i>Default: 6.5 seconds</i>.</li>
+    <li style="font-size:18px";>You can activate sounds to provide feedback after each number is generated.</li>
+    </ul></span>
+    """
 
-    if st.button("🔙 Return to Main Page"):
+    hlp_dtl[3] = """<span style="font-size: 20px;">
+    The following prizes / wins are considered in this game:<br><ul>
+    <li style="font-size:18px";><strong>Early 5 / Jaldi 5</strong>: These are the first 5 numbers, matched by the player against the board generated numbers, denoted by symbol 5️⃣.</li>
+    <li style="font-size:18px";><strong>Line 1</strong>: These are the 5 line numbers of line <i>#1</i>, matched by the player against the board generated numbers, denoted by symbol 1️⃣.</li>
+    <li style="font-size:18px";><strong>Line 2</strong>: These are the 5 line numbers of line <i>#2</i>, matched by the player against the board generated numbers, denoted by symbol 2️⃣.</li>
+    <li style="font-size:18px";><strong>Line 3</strong>: These are the 5 line numbers of line <i>#3</i>, matched by the player against the board generated numbers, denoted by symbol 3️⃣.</li>
+    <li style="font-size:18px";><strong>Full House</strong>: These are all the 15 line numbers of all 3 lines, matched by the player against the board generated numbers, denoted by symbol 🏚️.</li>
+    </ul>
+    On any win, the first player to press the buttons denoted by the above symbols (in the case on multiple wins per option), will be considered the winner for that option (line 1, 2, 3...) 
+    </span>
+    """
+
+    hlp_dtl[4] = """<span style="font-size: 20px;">
+    <ul>
+    <li style="font-size:18px";>A New Game Board must be created before any tickets (for that game) can be created.</li>
+    <li style="font-size:18px";>The newly created game board is assigned a unique Game Reference Number (GRN). Eg. HG26082023121607217203.</li>
+    <li style="font-size:18px";>This GRN must be communicated to all players, so that they can create tickets against that particular game.</li>
+    <li style="font-size:18px";>The new game board will consist of numbers between 1-90. Random numbers will be generated between these number limits. </li>
+    <li style="font-size:18px";>The Play/Pause button will need to be clicked to start the game board number run. Thereafter, the next numbers will generate by either (a) repeated clicks of this button (manual mode) or (b) automatically, as per the time interval (seconds) as defined in the game settings.</li>
+    <li style="font-size:18px";>If the back button is pressed during game play, the game will be aborted and game play for all players will terminate thereafter.</li>
+    </ul></span>
+    """
+
+    hlp_dtl[5] = """<span style="font-size: 20px;">
+    <ul>
+    <li style="font-size:18px";>Before creating a new ticket, a player must choose a game to play in and provide his/her name.</li>
+    <li style="font-size:18px";>It is suggested that all players have unique names to differentiate between them during wins.</li>
+    <li style="font-size:18px";>If a player wrongly chooses a game that has already started, he/she will need to catch up on all the numbers generated during that game run until that point.</li>
+    <li style="font-size:18px";>Each player ticket will consist of a random set of 15 numbers, set in 3 rows of 5 numbers each.</li>
+    <li style="font-size:18px";>The player will sequentially see all the numbers generated on the board after either the (a) time interval set in the games setting for the automatic mode, or after the (b) button press on the game board in the manual mode.</li>
+    <li style="font-size:18px";>All the board numbers can be seen at the bottom of the ticket, sorted ascendingly.</li>
+    <li style="font-size:18px";>If the player presses a number that is not generated by the game board, a warning message will display at the bottom right of the player’s screen.</li>
+    <li style="font-size:18px";>Only board generated numbers can be clicked by each player. Clicking such numbers will turn them green on the ticket.</li>
+    <li style="font-size:18px";>Please refer to the Prizes / Wins section for how to declare a win.</li>
+    </ul></span>
+    """
+
+    icon_optns = ('',
+                  '<i class="fa-solid fa-hands-asl-interpreting fa-xl"></i>', 
+                  '<i class="fa-solid fa-screwdriver-wrench fa-xl"></i>', 
+                  '<i class="fa-solid fa-gifts fa-xl"></i>', 
+                  '<i class="fa-solid fa-table-cells fa-xl"></i>', 
+                  '<i class="fa-solid fa-ticket fa-xl"></i>')
+    hlp_optns = ('', 'Game Overview', 'Game Settings', 'Prizes | Wins', 'New Game Board', 'New Game Ticket')
+    vhradio = st.sidebar.radio("Help Topic:", options=hlp_optns)
+    
+    if vhradio != '':
+        idx = int(hlp_optns.index(vhradio))
+        vicon_dtls = icon_optns[idx]
+        vftxt = HelpHeader(vhradio, vicon_dtls)
+
+        st.markdown(vftxt, unsafe_allow_html=True)
+        st.markdown(horizontal_bar, True)
+        st.markdown(hlp_dtl[idx], unsafe_allow_html=True)
+        st.markdown(horizontal_bar, True)
+
+    else:
+        game_help_image = Image.open('GameHelp.png').resize((1000, 650))
+        st.image(game_help_image, use_column_width='auto')
+    
+    if st.sidebar.button("🔙 Return to Main Page"):
         st.session_state.runpage = Main        
         st.experimental_rerun()
 
@@ -791,9 +906,6 @@ def LandingPage():
 
 if 'runpage' not in st.session_state:
     ClearExpiredGameFolders()
-    
     st.session_state.runpage = LandingPage
-    # st.session_state.runpage = Main
-    # st.session_state.runpage = GameAborted
 
 st.session_state.runpage()
