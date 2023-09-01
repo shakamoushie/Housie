@@ -3,12 +3,12 @@ import streamlit.components.v1 as components
 import base64
 import os
 import time as tm
-from datetime import datetime as dt
+from datetime import datetime as dt, timedelta
 import random
 from PIL import Image
 import shutil
 from streamlit_autorefresh import st_autorefresh
-from notifypy import Notify
+from notifypy import Notify     # pip install notify-py
 import pandas as pd
 
 st.set_page_config(page_title = "Housie", page_icon="🔢", layout = "wide", initial_sidebar_state = "expanded")
@@ -136,9 +136,11 @@ def ClearExpiredGameFolders():
     for gm_fldr in gm_fldr_lst:
         chkfl = vpth + gm_fldr + '/previous_board_number.txt'
         if os.path.isfile(chkfl):
-            mdttm = os.path.getmtime(chkfl)
-            mdttm = dt.fromtimestamp(mdttm).date()
-            if mdttm < dt.now().date():
+            sttm = os.path.getmtime(chkfl)
+            sttm = dt.fromtimestamp(sttm)
+
+            # determine game folder validity as 2 hours since last time previous_board_number.txt file was updated
+            if sttm + timedelta(hours=2) < dt.now():	# current time > start time + 2 hours; del (expired) game folder
                 shutil.rmtree("./" + gm_fldr)
 
 def GenUniqRndmNo():
@@ -417,7 +419,7 @@ def CreateNewTicket():
                                     notification.message = vndesc
                                     notification.audio = vpth + f"{fc}.wav"
                                     notification.icon = vpth + random.choice(["Speak1.png", "Speak2.png", "Speak3.png", "Speak4.png", "Speak5.png"])
-                                    notification.send()
+                                    notification.send(block=False)
                                 
                                 except:
                                     pass
