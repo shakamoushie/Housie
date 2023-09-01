@@ -37,7 +37,7 @@ if "WinStatus" not in st.session_state:
 
 # 0: Game No, 1: Player Name, 2: Game Path, 3: auto/manual num gen, 4: sec interval for autogen, 5: auto/man = true/false, 6: playsound 
 if "GameDetails" not in st.session_state:   
-    st.session_state.GameDetails = ['XP17', 'Shawn', '', 'auto', 6, False, True]
+    st.session_state.GameDetails = ['XP17', 'Shawn', '', 'auto', 6.0, False, True]
 
 if "disp_player_no" not in st.session_state:
     st.session_state.disp_player_no = 0
@@ -647,7 +647,7 @@ def GameSettings():
     w3hlp = "Play a beep for each new number generated on the board and ticket."
     vbr = c1.radio("Board Run", ("", "manual", "auto"), index=2, horizontal=True, help=w1hlp)
     vam_dsble = True if vbr == "manual" else False
-    vam = c2.number_input("Seconds", min_value=1.00, max_value=10.00, value=6.50, step=0.25, disabled=vam_dsble, help=w2hlp)
+    vam = c2.number_input("Seconds", min_value=1.00, max_value=10.00, value=6.00, step=0.25, disabled=vam_dsble, help=w2hlp)
     btn_dsbld = True if vbr == "" else False
     vsnd = st.radio("Sounds for new number generation", ('No', 'Yes'), horizontal=True, help=w3hlp)
     st.markdown(horizontal_bar, True)
@@ -810,7 +810,7 @@ def ViewHelp():
     hlp_dtl[2] = """<span style="font-size: 20px;">
     You can use this section to do the following:<br><ul>
     <li style="font-size:18px";>Set the numbers to be randomly generated on the board, to be automatic or manual. <i>Default: Automatic</i>.</li>
-    <li style="font-size:18px";>For automatic, you will need to specify the time interval (seconds) between the generation of two numbers. <i>Default: 6.5 seconds</i>.</li>
+    <li style="font-size:18px";>For automatic, you will need to specify the time interval (seconds) between the generation of two numbers. <i>Default: 6.0 seconds</i>.</li>
     <li style="font-size:18px";>You can activate sounds to provide feedback after each number is generated.</li>
     </ul></span>
     """
