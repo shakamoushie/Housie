@@ -794,16 +794,16 @@ def ViewHelp():
     <li style="font-size:18px";>Load game.</li>
     <li style="font-size:18px";>Choose New Game Board.</li>
     <li style="font-size:18px";>Inform players about Game Reference Number (GRN).</li>
-    <li style="font-size:18px";>Click on Play/Pause to start (play) game board number generation.</li>
+    <li style="font-size:18px";>Click on Play/Pause to start (play) board number generation, after all players have connected to the game.</li>
     </ol></span>""" + """<span style="font-size: 20px;">
     <strong>New Player Ticket:<br></strong>
     <ol>
-    <li style="font-size:18px";>Each player to open separate browser tab, only after the Game Board has been created and alive.</li>
+    <li style="font-size:18px";>Each player to open separate browser tab, only after the Game Board has been created and is alive.</li>
     <li style="font-size:18px";>Load game.</li>
-    <li style="font-size:18px";>Choose Game Reference Number (GRN).</li>
+    <li style="font-size:18px";>Choose Game Reference Number (GRN) provided by Admin.</li>
     <li style="font-size:18px";>Enter player name.</li>
     <li style="font-size:18px";>Create Game Ticket.</li>
-    <li style="font-size:18px";>Refresh window (🔄) if GRN and Player name options are not seen.</li>
+    <li style="font-size:18px";>Refresh window (🔄) if GRN and/or Player name options are not seen.</li>
     </ol></span>
     """ + """<span style="font-size: 20px;"><strong>Note: </strong>For any given game, the Tickets are to be created only after the Game Board has been created.</span><br><br>"""
 
@@ -811,17 +811,17 @@ def ViewHelp():
     You can use this section to do the following:<br><ul>
     <li style="font-size:18px";>Set the numbers to be randomly generated on the board, to be automatic or manual. <i>Default: Automatic</i>.</li>
     <li style="font-size:18px";>For automatic, you will need to specify the time interval (seconds) between the generation of two numbers. <i>Default: 6.0 seconds</i>.</li>
-    <li style="font-size:18px";>You can activate sounds to provide feedback after each number is generated.</li>
+    <li style="font-size:18px";>You can activate sounds to provide feedback after each number is generated. (Temporarily deactivated.)</li>
     </ul></span>
     """
 
     hlp_dtl[3] = """<span style="font-size: 20px;">
     The following prizes / wins are considered in this game:<br><ul>
-    <li style="font-size:18px";><strong>Early 5 / Jaldi 5</strong>: These are the first 5 numbers, matched by the player against the board generated numbers, denoted by symbol 5️⃣.</li>
-    <li style="font-size:18px";><strong>Line 1</strong>: These are the 5 line numbers of line <i>#1</i>, matched by the player against the board generated numbers, denoted by symbol 1️⃣.</li>
-    <li style="font-size:18px";><strong>Line 2</strong>: These are the 5 line numbers of line <i>#2</i>, matched by the player against the board generated numbers, denoted by symbol 2️⃣.</li>
-    <li style="font-size:18px";><strong>Line 3</strong>: These are the 5 line numbers of line <i>#3</i>, matched by the player against the board generated numbers, denoted by symbol 3️⃣.</li>
-    <li style="font-size:18px";><strong>Full House</strong>: These are all the 15 line numbers of all 3 lines, matched by the player against the board generated numbers, denoted by symbol 🏚️.</li>
+    <li style="font-size:18px";><strong>Early 5 / Jaldi 5</strong>: These are the first 5 numbers, matched by the player against the board generated numbers, denoted by the button symbol 5️⃣ on the ticket.</li>
+    <li style="font-size:18px";><strong>Line 1</strong>: These are the 5 line numbers of line <i>#1</i>, matched by the player against the board generated numbers, denoted by the button symbol 1️⃣ on the ticket.</li>
+    <li style="font-size:18px";><strong>Line 2</strong>: These are the 5 line numbers of line <i>#2</i>, matched by the player against the board generated numbers, denoted by the button symbol 2️⃣ on the ticket.</li>
+    <li style="font-size:18px";><strong>Line 3</strong>: These are the 5 line numbers of line <i>#3</i>, matched by the player against the board generated numbers, denoted by the button symbol 3️⃣ on the ticket.</li>
+    <li style="font-size:18px";><strong>Full House</strong>: These are all the 15 line numbers of all 3 lines, matched by the player against the board generated numbers, denoted by the button symbol 🏚️ on the ticket.</li>
     </ul>
     On any win, the first player to press the buttons denoted by the above symbols (in the case on multiple wins per option), will be considered the winner for that option (line 1, 2, 3...) 
     </span>
@@ -832,8 +832,8 @@ def ViewHelp():
     <li style="font-size:18px";>A New Game Board must be created before any tickets (for that game) can be created.</li>
     <li style="font-size:18px";>The newly created game board is assigned a unique Game Reference Number (GRN). Eg. HG26082023121607217203.</li>
     <li style="font-size:18px";>This GRN must be communicated to all players, so that they can create tickets against that particular game.</li>
-    <li style="font-size:18px";>The new game board will consist of numbers between 1-90. Random numbers will be generated between these number limits. </li>
-    <li style="font-size:18px";>The Play/Pause button will need to be clicked to start the game board number run. Thereafter, the next numbers will generate by either (a) repeated clicks of this button (manual mode) or (b) automatically, as per the time interval (seconds) as defined in the game settings.</li>
+    <li style="font-size:18px";>The new game board will consist of numbers between 1-90. Random numbers will be generated between these number limits, for the players to match against their individual tickets. </li>
+    <li style="font-size:18px";>The Play/Pause button will need to be clicked to start the game board number run. Thereafter, the next numbers will generate by either (a) repeated clicks of this button (manual mode) or (b) automatically, as per the time interval (seconds) as defined in the game settings (Default: 6 seconds).</li>
     <li style="font-size:18px";>If the back button is pressed during game play, the game will be aborted and game play for all players will terminate thereafter.</li>
     </ul></span>
     """
@@ -842,11 +842,11 @@ def ViewHelp():
     <ul>
     <li style="font-size:18px";>Before creating a new ticket, a player must choose a game to play in and provide his/her name.</li>
     <li style="font-size:18px";>It is suggested that all players have unique names to differentiate between them during wins.</li>
-    <li style="font-size:18px";>If a player wrongly chooses a game that has already started, he/she will need to catch up on all the numbers generated during that game run until that point.</li>
+    <li style="font-size:18px";>If a player wrongly chooses a game that has already started, or has joined in late, he/she will need to catch up on all the numbers generated during that game run until that point of entry.</li>
     <li style="font-size:18px";>Each player ticket will consist of a random set of 15 numbers, set in 3 rows of 5 numbers each.</li>
-    <li style="font-size:18px";>The player will sequentially see all the numbers generated on the board after either the (a) time interval set in the games setting for the automatic mode, or after the (b) button press on the game board in the manual mode.</li>
+    <li style="font-size:18px";>The player will sequentially see all the numbers generated on the board after either the (a) time interval set in the games setting in the automatic mode, or after the (b) button press on the game board in the manual mode.</li>
     <li style="font-size:18px";>All the board numbers can be seen at the bottom of the ticket, sorted ascendingly.</li>
-    <li style="font-size:18px";>If the player presses a number that is not generated by the game board, a warning message will display at the bottom right of the player’s screen.</li>
+    <li style="font-size:18px";>If the player presses a number on his/her ticket, that is not generated by the game board, a warning message will display at the bottom right of the player’s screen.</li>
     <li style="font-size:18px";>Only board generated numbers can be clicked by each player. Clicking such numbers will turn them green on the ticket.</li>
     <li style="font-size:18px";>Please refer to the Prizes / Wins section for how to declare a win.</li>
     </ul></span>
