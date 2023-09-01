@@ -498,7 +498,7 @@ def CreateNewTicket():
 def PlayPause():
     st.session_state.GameDetails[5] = not st.session_state.GameDetails[5]
 
-def NewGeneratedNumber():
+def NewGeneratedNumber(msgph):
     vno = GenUniqRndmNo()
     st.session_state.board_nos[vno].markdown(selected_no_colour.replace('|fill_variable|', str(vno).zfill(2)), True)
 
@@ -508,6 +508,8 @@ def NewGeneratedNumber():
     if len(st.session_state.board_gen_no_lst) > 0:
         with open(st.session_state.GameDetails[2] + 'board_number_list.txt', 'w') as f:   # write gen no into txt file
             f.write(', '.join(str(x).zfill(2) for x in st.session_state.board_gen_no_lst))
+    
+    msgph.empty()
 
 def UpdtWinStatus():
     winstr = ''
@@ -614,17 +616,24 @@ def CreateNewBoard():
     if ws != '':
         winstats.markdown(win_txt.replace('|fill_variable|', ws), True)
 
+    msgph = st.empty()
     mbtn_dsble = True if len(st.session_state.board_gen_no_lst) >= 90 else False
     if st.session_state.GameDetails[3] == "manual":
-        c1.button("🔄", help="Generate another board number", key='gan', on_click=NewGeneratedNumber, disabled=mbtn_dsble)
+        msgph.write(":blue[Waiting to generate next board number with manual button click...]")
+        c1.button("🔄", help="Generate another board number", key='gan', on_click=NewGeneratedNumber, args=(msgph,), disabled=mbtn_dsble)
+
 
     else: # auto mode
+        if st.session_state.GameDetails[5] == False:
+            msgph.write(":blue[Waiting to generate next board number with manual button click...]")
+
         c1.button("⏯", help="Play / pause auto number generation.", on_click=PlayPause)
         if st.session_state.GameDetails[5] == True:
             if mbtn_dsble == False:
+                msgph.write(":blue[Generating next board number in a few seconds...]")
                 gentimer = st_autorefresh(interval=st.session_state.GameDetails[4] * 1000, limit=91, key="gentmr")
                 if gentimer > 0:
-                    NewGeneratedNumber()
+                    NewGeneratedNumber(msgph)
             
     if c2.button("🔙", help="Return to Main Menu"):
         if len(st.session_state.board_gen_no_lst) < 92:
