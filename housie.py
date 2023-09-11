@@ -8,8 +8,9 @@ import random
 from PIL import Image
 import shutil
 from streamlit_autorefresh import st_autorefresh
-from notifypy import Notify     # pip install notify-py
 import pandas as pd
+
+# from notifypy import Notify     # pip install notify-py
 
 st.set_page_config(page_title = "Housie", page_icon="🔢", layout = "wide", initial_sidebar_state = "expanded")
 
@@ -37,7 +38,7 @@ if "WinStatus" not in st.session_state:
 
 # 0: Game No, 1: Player Name, 2: Game Path, 3: auto/manual num gen, 4: sec interval for autogen, 5: auto/man = true/false, 6: playsound 
 if "GameDetails" not in st.session_state:   
-    st.session_state.GameDetails = ['XP17', 'Shawn', '', 'auto', 6.0, False, True]
+    st.session_state.GameDetails = ['XP17', 'Shawn', '', 'auto', 6.0, False, True, None]
 
 if "disp_player_no" not in st.session_state:
     st.session_state.disp_player_no = 0
@@ -103,9 +104,9 @@ win_txt = """<span style='background-color: #90CAF9;
                                      |fill_variable|
                                      </span>"""
 
-notification = Notify()
-notification.title = "Housie Number"
-# notification.icon = vpth + "Speak.png"
+# notification = Notify()
+# notification.title = "Housie Number"
+# # notification.icon = vpth + "Speak.png"
 
 def ReduceGapFromPageTop():
     st.markdown(" <style> div[class^='block-container'] { padding-top: 3rem; } </style> ", unsafe_allow_html=True)  # reduce gap from page top
@@ -125,7 +126,12 @@ def CreateSubDir(wch_sub_folder):
     if not chk_if_subdir_exists:
         os.makedirs(vfull_dir_path)
         return False
-    
+
+@st.cache_data
+def load_number_animation():
+    number_animation = ReadPictureFile('NumberAnimation.gif')
+    return f"<img src='data:png;base64,{number_animation}'>&nbsp;&nbsp;"
+
 def ClearExpiredGameFolders():
     # chk for game folders in current dir
     # delete if dt of previous_board_number.txt is less than today (for orphaned games)
@@ -134,14 +140,14 @@ def ClearExpiredGameFolders():
     gm_fldr_lst = [x for x in files_in_path if not os.path.isfile(x) and x.startswith('HG')] # chk if folders in dir; only ones that start w/HG
 
     for gm_fldr in gm_fldr_lst:
-        chkfl = vpth + gm_fldr + '/previous_board_number.txt'
+        chkfl = vpth + gm_fldr + '/CleanUp.txt'
         if os.path.isfile(chkfl):
             sttm = os.path.getmtime(chkfl)
             sttm = dt.fromtimestamp(sttm)
 
-            # determine game folder validity as 2 hours since last time previous_board_number.txt file was updated
-            if sttm + timedelta(hours=2) < dt.now():	# current time > start time + 2 hours; del (expired) game folder
-                shutil.rmtree("./" + gm_fldr)
+            # determine game folder validity as 0.5 hours since last time previous_board_number.txt file was updated
+            if sttm + timedelta(hours=0.5) < dt.now():	# current time > start time + 0.5 hours; del (expired) game folder
+                shutil.rmtree("./" + gm_fldr, ignore_errors=True)
 
 def GenUniqRndmNo():
     while True:
@@ -156,6 +162,9 @@ def GameAborted():
     st.subheader(f"👾 Game Ref. No. (GRN): :blue[{st.session_state.GameDetails[0]}]:")
     st.markdown(horizontal_bar, True)
     st.markdown(purple_btn_colour, unsafe_allow_html=True)
+
+    with open(st.session_state.GameDetails[2] + 'CleanUp.txt', 'w') as f:
+        f.write('Delete game')
 
     for i in range(2):
         st.write("")    # vertical filler
@@ -191,6 +200,9 @@ def GameOver():
     ReduceGapFromPageTop()
     st.subheader(f"👾 Game Ref. No. (GRN): :blue[{st.session_state.GameDetails[0]}]:")
     st.markdown(horizontal_bar, True)
+
+    with open(st.session_state.GameDetails[2] + 'CleanUp.txt', 'w') as f:
+        f.write('Delete game')
 
     ptxt = """<span style='color: #000000;
                             font-size: 18px;
@@ -292,7 +304,7 @@ def ResetPlayerBtnColour():
     find_code = """<script>var elements = window.parent.document.querySelectorAll('button'), i;
                     for (i = 0; i < elements.length; ++i) { if (elements[i].innerText == '"""
     
-    add_colour_code = """') elements[i].style.background = '#AED581'; } </script> """ 
+    add_colour_code = """') elements[i].style.background = '#76d7c4'; } </script> """ 
     rmv_colour_code = """') elements[i].style.background = ''; } </script> """
 
     for key, clkd in st.session_state.player_nos.items():
@@ -379,19 +391,20 @@ def FullHouse():
 
 def CreateNewTicket():
     ReduceGapFromPageTop()
+
     st.subheader(f"Game Ref. No. (GRN): :blue[{st.session_state.GameDetails[0]}] Ticket | Player: :blue[{st.session_state.GameDetails[1]}]:")
     st.markdown(horizontal_bar, True)
 
     tmp_player_nos = list(st.session_state.player_nos.keys())
 
     sc1, sc2, sc3, sc4 = st.columns((4,3,1,3))
+    with sc3.container():
+        aftimer = st_autorefresh(interval=2000, key="aftmr")    # let iframe get generated in this container, owise it will add a blank line
+
     with sc4.container():
         st.markdown(f"<img src='data:png;base64,{ReadPictureFile('TicketImg.png')}'>", unsafe_allow_html=True)
 
     with sc1.container():
-        for i in range(3):
-            st.write('') # vertical filler
-
         bn_ptr = -1
         for vrow in range(1,4):
             cols = st.columns((1,1,1,1,1,1))
@@ -402,7 +415,9 @@ def CreateNewTicket():
 
     fc = 0
     with sc2.container():
-        aftimer = st_autorefresh(interval=2000, key="aftmr")
+        ph = st.empty()
+
+        # aftimer = st_autorefresh(interval=2000, key="aftmr")
         if aftimer > 0:
             if os.path.isfile(st.session_state.GameDetails[2] + 'previous_board_number.txt'):
                 mdttm = os.path.getmtime(st.session_state.GameDetails[2] + 'previous_board_number.txt')
@@ -412,22 +427,31 @@ def CreateNewTicket():
                         fc = int(f.read())
                         if fc != st.session_state.disp_player_no:
                             st.session_state.disp_player_no = fc
-                            if st.session_state.GameDetails[6] == True:
-                                try:
-                                    vndesc = st.session_state.mydf['Description'].where(st.session_state.mydf['No'] == fc).dropna().tolist()[0]
-                                    
-                                    notification.message = vndesc
-                                    notification.audio = vpth + f"{fc}.wav"
-                                    notification.icon = vpth + random.choice(["Speak1.png", "Speak2.png", "Speak3.png", "Speak4.png", "Speak5.png"])
-                                    notification.send(block=False)
-                                
-                                except:
-                                    pass
 
+                            # spin number
+                            for snknt in range(10):
+                                spin_no = random.randint(1, 90)
+                                ph.markdown(last_gen_no_colour.replace('|fill_variable|', str(spin_no).zfill(2)), True)
+                                tm.sleep(0.03)
+
+                            # # elaborate toast if working on non-streamlit cloud
+                            # if st.session_state.GameDetails[6] == True:
+                            #     try:
+                            #         vndesc = st.session_state.mydf['Description'].where(st.session_state.mydf['No'] == fc).dropna().tolist()[0]
+                                    
+                            #         notification.message = vndesc
+                            #         notification.audio = vpth + f"{fc}.wav"
+                            #         notification.icon = vpth + random.choice(["Speak1.png", "Speak2.png", "Speak3.png", "Speak4.png", "Speak5.png"])
+                            #         notification.send(block=False)
+                                
+                            #     except:
+                            #         pass
+        
         if len(st.session_state.board_gen_no_lst) > 0:
-            st.markdown(last_gen_no_colour.replace('|fill_variable|', str(st.session_state.disp_player_no).zfill(2)), True)
+            ph.markdown(last_gen_no_colour.replace('|fill_variable|', str(st.session_state.disp_player_no).zfill(2)), True)
+        
         else:
-            st.markdown(last_gen_no_colour.replace('|fill_variable|', str(0).zfill(2)), True)
+            ph.markdown(last_gen_no_colour.replace('|fill_variable|', str(0).zfill(2)), True)
         
         sc21, sc22, sc23, sc24, sc25, sc26 = st.columns(6)
         
@@ -527,45 +551,22 @@ def UpdtWinStatus():
     return winstr
 
 def DeleteTmpFiles():
-    try:
-        os.remove(st.session_state.GameDetails[2] + 'board_number_list.txt')
-    except:
-        pass
-
-    try:
-        os.remove(st.session_state.GameDetails[2] + 'previous_board_number.txt')
-    except:
-        pass
-
-    try:
-        os.remove(st.session_state.GameDetails[2] + 'jaldi5.txt')
-    except:
-        pass
-
-    try:
-        os.remove(st.session_state.GameDetails[2] + 'line1.txt')
-    except:
-        pass
-
-    try:
-        os.remove(st.session_state.GameDetails[2] + 'line2.txt')
-    except:
-        pass
-
-    try:
-        os.remove(st.session_state.GameDetails[2] + 'line3.txt')
-    except:
-        pass
-
-    try:
-        os.remove(st.session_state.GameDetails[2] + 'fullhouse.txt')
-    except:
-        pass
-
-    try:
-        os.remove(st.session_state.GameDetails[2] + 'abortgame.txt')
-    except:
-        pass
+    del_fl_lst = ['board_number_list.txt', 
+                  'previous_board_number.txt', 
+                  'jaldi5.txt', 
+                  'line1.txt', 
+                  'line2.txt', 
+                  'line3.txt', 
+                  'fullhouse.txt'
+                  'abortgame.txt', 
+                  'CleanUp.txt']
+    
+    for fl in del_fl_lst:
+        try:
+            os.remove(st.session_state.GameDetails[2] + fl)
+        
+        except:
+            pass
 
 def CreateNewBoard():
     ReduceGapFromPageTop()
@@ -621,7 +622,6 @@ def CreateNewBoard():
     if st.session_state.GameDetails[3] == "manual":
         msgph.write(":blue[Waiting to generate next board number with manual button click...]")
         c1.button("🔄", help="Generate another board number", key='gan', on_click=NewGeneratedNumber, args=(msgph,), disabled=mbtn_dsble)
-
 
     else: # auto mode
         if st.session_state.GameDetails[5] == False:
@@ -907,6 +907,7 @@ def LandingPage():
     for i in range(34):
         c2.write("")    # vertical filler
 
+    st.session_state.GameDetails[7] = load_number_animation()
     if c2.button("Press a key to continue..."): # bypass time delay
         st.session_state.runpage = Main
         st.experimental_rerun()
