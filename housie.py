@@ -902,7 +902,7 @@ def LandingPage():
     st.rerun()
 
 if 'runpage' not in mystate:
-    ClearExpiredGameFolders()
+    # ClearExpiredGameFolders()
     mystate.runpage = LandingPage
 
 mystate.runpage()
