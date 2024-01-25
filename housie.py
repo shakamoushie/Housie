@@ -728,7 +728,7 @@ def Main():
                 gm_ref = st.selectbox("👇 Choose Game Ref. No. (GRN): :red[*]", gm_fldr_lst, index=None, placeholder="Choose a game to play", help="Choose a game for which a ticket needs to be created")
                 plyr_nme = st.text_input("👨🏻‍💼 Player Name: :red[*]")
                 ntdsbld = True if gm_ref == '' or plyr_nme == '' else False
-                new_tkt = st.button("⚙️ Generate Game Ticket", on_click=NewTicketCallback, args=(gm_ref, plyr_nme), disabled=ntdsbld)
+                new_tkt = st.button("⚙️ Generate Game Ticket", on_click=NewTicketCallback, args=(gm_ref, plyr_nme), disabled=ntdsbld, use_container_width=True)
                 if new_tkt:
                     PreCreation("Ticket")
                     mystate.runpage = CreateNewTicket
@@ -883,14 +883,15 @@ def LandingPage():
     img_code = f"""<style>
                         .stApp {{
                             background: url(data:image/{bkgrnd_img_ext};base64,{base64.b64encode(open(bkgrnd_img, 'rb').read()).decode()});
-                            background-size: cover;
-                            background-size: 1800px 800px;
+                            background-repeat: no-repeat;
+                            background-attachment: fixed;
+                            background-size: 100% 100%;
                         }}
-                   </style>"""
+                    </style>"""
 
     st.markdown(img_code, unsafe_allow_html=True)
-    c1, c2 = st.columns((6,3))
-    for i in range(34): c2.write("")    # vertical filler
+    c1, c2 = st.columns((8,3))
+    for i in range(38): c2.write("")    # vertical filler
 
     mystate.GameDetails[7] = load_number_animation()
     if c2.button("Press a key to continue..."): # bypass time delay
